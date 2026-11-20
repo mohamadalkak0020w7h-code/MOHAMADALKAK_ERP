@@ -820,8 +820,14 @@
   <!-- 14a. إدارة المستخدمين والصلاحيات -->
   <section id="view-users" class="view-section">
     <div class="panel">
-      <div class="panel-hdr">إدارة حساب المدير والحسابات الفرعية وصلاحياتها</div>
+      <div class="panel-hdr">إدارة حساب Gmail المدير والحسابات الفرعية وصلاحياتها</div>
       <div class="panel-body">
+        <div style="background:#FEF9E7;border:1px solid #D4AC0D;border-radius:6px;padding:10px;margin-bottom:12px;">
+          <div class="form-grid" style="margin-bottom:0;">
+            <div class="form-group"><label>حساب Gmail المدير (يُستخدم لتسجيل دخول كل الحسابات الفرعية)</label><input type="email" id="adminGmailInput" class="form-control" placeholder="example@gmail.com" dir="ltr"></div>
+            <div class="form-group" style="display:flex;align-items:flex-end;"><button type="button" class="btn btn-steel" onclick="saveAdminGmail()">💾 حفظ Gmail المدير</button></div>
+          </div>
+        </div>
         <div class="form-grid">
           <div class="form-group"><label>اسم المستخدم (للدخول)</label><input type="text" id="uUsername" class="form-control" placeholder="مثال: sales1"></div>
           <div class="form-group"><label>الاسم الظاهر</label><input type="text" id="uDisplay" class="form-control" placeholder="مثال: موظف المبيعات"></div>
@@ -1108,7 +1114,21 @@ function getNextAutoCode(type) {
   if (type === 'supplier') return '22' + String(state.parties.filter(p => p.type === 'مورد').length + 1).padStart(padLen, '0');
   return '';
 }
+function gmailToRoom(email) {
+  return email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+}
+
+function saveAdminGmail() {
+  const gm = document.getElementById('adminGmailInput').value.trim().toLowerCase();
+  if (!gm || !gm.includes('@')) return showErpToast('يرجى إدخال بريد Gmail صحيح');
+  state.settings.adminGmail = gm;
+  state.settings.fbRoom = gmailToRoom(gm);
+  saveState();
+  showErpToast('تم ربط حساب Gmail المدير بنجاح ✓');
+}
+
 function openLoginModal(forceLock) {
+  document.getElementById('loginGmail').value = state.settings.adminGmail || '';
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginCancelBtn').style.display = forceLock ? 'none' : '';
@@ -1119,9 +1139,39 @@ function closeLoginModal() {
   document.getElementById('erpLoginModal').style.display = 'none';
 }
 
-function doLogin() {
+async function doLogin() {
+  const gm = document.getElementById('loginGmail').value.trim().toLowerCase();
   const un = document.getElementById('loginUser').value.trim();
   const pw = document.getElementById('loginPass').value.trim();
+
+  if (!un || !pw) return showErpToast('أدخل اسم المستخدم وكلمة المرور');
+
+  // If Gmail is provided and Firebase URL is configured, sync company state for that Gmail first
+  const url = (state.settings.fbUrl || '').trim().replace(/\/+$/, '');
+  if (gm && url && url.startsWith('https://')) {
+    const room = gmailToRoom(gm);
+    state.settings.adminGmail = gm;
+    state.settings.fbRoom = room;
+    state.settings.fbEnabled = true;
+    try {
+      const res = await fetch(`${url}/alqaaq_erp/${room}.json`);
+      if (res.ok) {
+        const remote = await res.json();
+        if (remote && Array.isArray(remote.users)) {
+          remote.settings = remote.settings || {};
+          remote.settings.fbUrl = url;
+          remote.settings.fbRoom = room;
+          remote.settings.adminGmail = gm;
+          remote.settings.fbEnabled = true;
+          state = remote;
+          ensureStateDefaults();
+        }
+      }
+    } catch (e) {}
+  } else if (state.settings.adminGmail && gm && gm !== state.settings.adminGmail.toLowerCase()) {
+    return showErpToast('بريد Gmail المدخل لا يطابق بريد المدير المسجل');
+  }
+
   const found = (state.users || []).find(u => u.username.toLowerCase() === un.toLowerCase() && u.pass === pw);
   if (!found) return showErpToast('اسم المستخدم أو كلمة المرور غير صحيحة');
   if (found.active === false) return showErpToast('⛔ تم إيقاف هذا الحساب من قبل المدير');
@@ -1878,6 +1928,7 @@ function refreshAll() {
   document.getElementById('setInvTemplate').value = state.settings.invTemplate || 'classic';
   if (document.getElementById('fbUrl')) document.getElementById('fbUrl').value = state.settings.fbUrl || '';
   if (document.getElementById('fbRoom')) document.getElementById('fbRoom').value = state.settings.fbRoom || 'alkak_main';
+  if (document.getElementById('adminGmailInput')) document.getElementById('adminGmailInput').value = state.settings.adminGmail || '';
   if (document.getElementById('fbEnabled')) document.getElementById('fbEnabled').checked = !!state.settings.fbEnabled;
   document.getElementById('prTemplate').value = state.settings.invTemplate || 'classic';
 
@@ -2482,10 +2533,11 @@ window.onload = function () {
 };
 </script>
 <div id="erpLoginModal" style="position:fixed;inset:0;background:rgba(15,23,42,0.82);z-index:9998;display:none;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fff;border-radius:10px;max-width:380px;width:100%;padding:18px;border-top:5px solid var(--maroon);box-shadow:0 12px 32px rgba(0,0,0,0.35);">
-    <h3 style="margin:0 0 6px;color:var(--maroon);font-size:16px;">🔐 تسجيل الدخول — القاق ERP</h3>
-    <p style="margin:0 0 12px;font-size:11px;color:var(--muted);">حساب المدير الافتراضي: <strong>admin</strong> | الرمز: <strong>1234</strong></p>
-    <div class="form-group" style="margin-bottom:10px;"><label>اسم المستخدم</label><input type="text" id="loginUser" class="form-control" placeholder="admin" dir="ltr"></div>
+  <div style="background:#fff;border-radius:10px;max-width:400px;width:100%;padding:18px;border-top:5px solid var(--maroon);box-shadow:0 12px 32px rgba(0,0,0,0.35);">
+    <h3 style="margin:0 0 6px;color:var(--maroon);font-size:16px;">🔐 تسجيل الدخول — ALKAK ERP</h3>
+    <p style="margin:0 0 12px;font-size:11px;color:var(--muted);">للدخول لحساب المدير أو أي حساب فرعي أدخل بريد <strong>Gmail</strong> المدير واسم المستخدم وكلمة المرور:</p>
+    <div class="form-group" style="margin-bottom:10px;"><label>حساب Gmail المدير / الشركة</label><input type="email" id="loginGmail" class="form-control" placeholder="example@gmail.com" dir="ltr"></div>
+    <div class="form-group" style="margin-bottom:10px;"><label>اسم المستخدم (للمدير: admin)</label><input type="text" id="loginUser" class="form-control" placeholder="admin" dir="ltr"></div>
     <div class="form-group" style="margin-bottom:14px;"><label>كلمة المرور / الرمز</label><input type="password" id="loginPass" class="form-control" placeholder="1234" dir="ltr"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px;">
       <button type="button" id="loginCancelBtn" class="btn btn-gray" onclick="closeLoginModal()">إغلاق</button>
