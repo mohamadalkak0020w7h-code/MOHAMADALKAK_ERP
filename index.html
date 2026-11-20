@@ -889,7 +889,7 @@
       <div class="panel-hdr maroon">ℹ️ حول التطبيق — نظام المهندس للمحاسبة والمستودعات _ القاق ERP</div>
       <div class="panel-body">
         <div style="background:linear-gradient(135deg,#7B1E3A,#2B547E);color:#fff;padding:16px;border-radius:6px;text-align:center;margin-bottom:14px;">
-          <div onclick="tapEngineerSecret()" style="font-size:17px;font-weight:bold;margin-bottom:6px;cursor:pointer;user-select:none;">تم تصميمه بالكامل بإشراف المهندس محمد سليم القاق</div>
+          <div style="font-size:17px;font-weight:bold;margin-bottom:6px;">تم تصميمه بالكامل بإشراف المهندس محمد سليم القاق</div>
           <div style="font-size:12px;color:#F9EBEA;">نظام محاسبي ومستودعي متكامل يعمل بدقة على الهاتف والكمبيوتر</div>
         </div>
 
@@ -907,56 +907,7 @@
           </div>
         </div>
 
-                <div id="engineerPrivatePanel" class="panel" style="margin-bottom:14px;display:none;border:2px solid var(--maroon);">
-          <div class="panel-hdr maroon">
-            <span>🔐 لوحة المهندس الخاصة (مخفية عن الشركات)</span>
-            <button type="button" class="btn btn-gray" style="padding:2px 8px;font-size:11px;" onclick="document.getElementById('engineerPrivatePanel').style.display='none'">إخفاء</button>
-          </div>
-          <div class="panel-body">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-              <button type="button" class="btn btn-primary" onclick="sendSupportReport()">📲 إرسال التقرير التشخيصي لواتساب</button>
-              <button type="button" class="btn btn-steel" onclick="refreshErrorLogView()">🔄 تحديث السجل</button>
-              <button type="button" class="btn btn-danger" onclick="clearErrorLogs()">🗑️ مسح السجل</button>
-            </div>
-            <div style="background:#FEF9E7;border:1px solid #D4AC0D;border-radius:6px;padding:10px;margin-bottom:10px;">
-              <div style="font-weight:bold;font-size:12px;color:var(--maroon);margin-bottom:6px;">
-                🔑 التحكم بترخيص الشركة عن بُعد — الحالة الحالية: <span id="engLicenseBadge">مفعّل ✓</span>
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="setCompanyLicense(false)">⛔ إيقاف نسخة الشركة</button>
-                <button type="button" class="btn btn-success" onclick="setCompanyLicense(true)">✅ تفعيل نسخة الشركة</button>
-              </div>
-            </div>
-            <div style="background:#EBF5FB;border:1px solid #85C1E9;border-radius:6px;padding:10px;margin-bottom:10px;">
-              <div style="font-weight:bold;font-size:12px;color:var(--steel);margin-bottom:6px;">
-                📱 نظام تفعيل الأجهزة (منع النسخ غير المصرح) — معرّف هذا الجهاز: <span id="engMyDevId" dir="ltr"></span>
-              </div>
-              <div class="form-grid" style="margin-bottom:6px;">
-                <div class="form-group">
-                  <label>رابط سحابة المهندس المركزية (Firebase)</label>
-                  <input type="url" id="engMasterFbUrl" class="form-control" placeholder="https://your-project-default-rtdb.firebaseio.com" dir="ltr">
-                </div>
-                <div class="form-group" style="display:flex;align-items:flex-end;">
-                  <label style="font-size:12px;font-weight:bold;cursor:pointer;margin-bottom:6px;">
-                    <input type="checkbox" id="engDevLockCb" onchange="saveEngDeviceSettings()"> تفعيل قفل الأجهزة الجديدة
-                  </label>
-                </div>
-              </div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-                <button type="button" class="btn btn-primary" onclick="saveEngDeviceSettings();approveThisDevice()">✅ تفعيل هذا الجهاز وحفظ الإعدادات</button>
-                <button type="button" class="btn btn-steel" onclick="loadRegisteredDevices()">🔄 تحديث قائمة الأجهزة</button>
-              </div>
-              <div id="engDevicesList" style="max-height:150px;overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:4px;padding:6px;font-size:11px;">
-                اضغط «تحديث قائمة الأجهزة» لعرض الأجهزة المسجلة.
-              </div>
-            </div>
-            <div id="errorLogBox" style="background:#F8F9F9;border:1px solid var(--border);border-radius:5px;padding:8px;font-size:11px;max-height:140px;overflow-y:auto;direction:ltr;text-align:left;">
-              No errors recorded.
-            </div>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-bottom:0;">
+                <div class="panel" style="margin-bottom:0;">
           <div class="panel-hdr">✨ أبرز ميزات التطبيق</div>
           <div class="panel-body">
             <ul style="margin:0;padding-right:20px;line-height:1.9;font-size:13px;">
@@ -2414,59 +2365,7 @@ window.addEventListener('unhandledrejection', (e) => {
   recordErpError(e.reason && e.reason.message ? e.reason.message : String(e.reason), 'Promise');
 });
 
-let _engTaps = 0;
-let _engTapTimer = null;
-function tapEngineerSecret() {
-  _engTaps++;
-  clearTimeout(_engTapTimer);
-  _engTapTimer = setTimeout(() => { _engTaps = 0; }, 2000);
-  if (_engTaps >= 5) {
-    _engTaps = 0;
-    document.getElementById('engPassInput').value = '';
-    document.getElementById('erpEngPassModal').style.display = 'flex';
-  }
-}
-
-function closeEngPassModal() {
-  document.getElementById('erpEngPassModal').style.display = 'none';
-}
-
-function verifyEngPass() {
-  const val = document.getElementById('engPassInput').value;
-  if (val !== 'Mohamad@0020w7H') {
-    return showErpToast('كلمة السر غير صحيحة');
-  }
-  closeEngPassModal();
-  const p = document.getElementById('engineerPrivatePanel');
-  if (p) {
-    p.style.display = 'block';
-    refreshErrorLogView();
-    updateLicenseUI();
-    document.getElementById('engMyDevId').textContent = getOrCreateDeviceId();
-    document.getElementById('engMasterFbUrl').value = state.settings.engMasterFbUrl || '';
-    document.getElementById('engDevLockCb').checked = !!state.settings.deviceLockEnabled;
-    document.getElementById('erpDeviceLock').style.display = 'none';
-    navTo('about');
-    loadRegisteredDevices();
-    showErpToast('تم فتح لوحة المهندس الخاصة ✓');
-  }
-}
-
-function clearErrorLogs() {
-  erpErrorLogs = [];
-  try { localStorage.removeItem('AlQaq_ERP_Errors'); } catch (e) {}
-  refreshErrorLogView();
-}
-
-function refreshErrorLogView() {
-  const box = document.getElementById('errorLogBox');
-  if (!box) return;
-  if (!erpErrorLogs.length) {
-    box.textContent = 'No errors recorded ✓ (النظام يعمل بدون أخطاء)';
-    return;
-  }
-  box.innerHTML = erpErrorLogs.map(e => `<div>[${e.time}] (${e.company}) ${e.msg}</div>`).join('');
-}
+function refreshErrorLogView() {}
 
 function sendSupportReport() {
   const co = (state.settings && state.settings.coName) || 'غير محددة';
@@ -2498,43 +2397,6 @@ function getMasterFbUrl() {
   return (state.settings.engMasterFbUrl || state.settings.fbUrl || '').trim().replace(/\/+$/, '');
 }
 
-function saveEngDeviceSettings() {
-  state.settings.engMasterFbUrl = document.getElementById('engMasterFbUrl').value.trim();
-  state.settings.deviceLockEnabled = document.getElementById('engDevLockCb').checked;
-  localStorage.setItem(DB_NAME, JSON.stringify(state));
-  if (db) {
-    const tx = db.transaction('erp_state', 'readwrite');
-    tx.objectStore('erp_state').put({ id: 'main', data: state });
-  }
-  showErpToast('تم حفظ إعدادات تفعيل الأجهزة ✓');
-}
-
-async function approveThisDevice() {
-  const devId = getOrCreateDeviceId();
-  try { localStorage.setItem('ALKAK_Device_Status', 'approved'); } catch (e) {}
-  document.getElementById('erpDeviceLock').style.display = 'none';
-  await setRemoteDeviceStatus(devId, 'approved');
-}
-
-async function setRemoteDeviceStatus(devId, status) {
-  const url = getMasterFbUrl();
-  if (url && url.startsWith('https://')) {
-    try {
-      await fetch(`${url}/alkak_devices/${devId}.json`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId: devId, status, updatedAt: Date.now() })
-      });
-    } catch (e) {}
-  }
-  if (devId === getOrCreateDeviceId()) {
-    try { localStorage.setItem('ALKAK_Device_Status', status); } catch (e) {}
-    updateDeviceLockUI(status);
-  }
-  loadRegisteredDevices();
-  showErpToast(status === 'approved' ? 'تم تفعيل الجهاز ✓' : 'تم إيقاف الجهاز ⛔');
-}
-
 function updateDeviceLockUI(status) {
   const lock = document.getElementById('erpDeviceLock');
   if (!lock) return;
@@ -2547,9 +2409,7 @@ function updateDeviceLockUI(status) {
 
 async function checkDeviceActivation(manual) {
   const devId = getOrCreateDeviceId();
-  const devEl1 = document.getElementById('engMyDevId');
   const devEl2 = document.getElementById('lockMyDevId');
-  if (devEl1) devEl1.textContent = devId;
   if (devEl2) devEl2.textContent = devId;
 
   let localStatus = 'pending';
@@ -2582,34 +2442,6 @@ async function checkDeviceActivation(manual) {
   if (manual) showErpToast(localStatus === 'approved' ? 'تم تفعيل الجهاز ✓' : 'الجهاز ما زال بانتظار موافقة المهندس');
 }
 
-async function loadRegisteredDevices() {
-  const box = document.getElementById('engDevicesList');
-  if (!box) return;
-  const url = getMasterFbUrl();
-  if (!url || !url.startsWith('https://')) {
-    box.textContent = 'أدخل رابط سحابة المهندس (Firebase) أولاً لعرض كل الأجهزة.';
-    return;
-  }
-  try {
-    const res = await fetch(`${url}/alkak_devices.json`);
-    const data = await res.json();
-    if (!data) { box.textContent = 'لا توجد أجهزة مسجلة بعد.'; return; }
-    const rows = Object.values(data).map(d => {
-      const st = d.status === 'approved' ? '✅ مفعّل' : (d.status === 'blocked' ? '⛔ موقوف' : '⏳ بانتظار التفعيل');
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #eee;gap:6px;">
-        <span><strong>${d.deviceId}</strong> (${d.company || '-'}) — ${st}</span>
-        <span style="display:flex;gap:4px;">
-          <button type="button" class="btn btn-success" style="padding:2px 6px;font-size:10px;" onclick="setRemoteDeviceStatus('${d.deviceId}','approved')">تفعيل</button>
-          <button type="button" class="btn btn-danger" style="padding:2px 6px;font-size:10px;" onclick="setRemoteDeviceStatus('${d.deviceId}','blocked')">إيقاف</button>
-        </span>
-      </div>`;
-    }).join('');
-    box.innerHTML = rows || 'لا توجد أجهزة.';
-  } catch (e) {
-    box.textContent = 'تعذر جلب قائمة الأجهزة من السحابة.';
-  }
-}
-
 function requestDeviceWhatsApp() {
   const devId = getOrCreateDeviceId();
   const co = state.settings.coName || 'شركة جديدة';
@@ -2619,35 +2451,8 @@ function requestDeviceWhatsApp() {
 
 function updateLicenseUI() {
   const active = state.settings.licenseActive !== false;
-  const badge = document.getElementById('engLicenseBadge');
-  if (badge) {
-    badge.textContent = active ? 'مفعّل ✓' : 'موقوف ⛔';
-    badge.style.color = active ? '#145A32' : '#C0392B';
-  }
   const lock = document.getElementById('erpLicenseLock');
   if (lock) lock.style.display = active ? 'none' : 'flex';
-}
-
-async function setCompanyLicense(isActive) {
-  state.settings.licenseActive = !!isActive;
-  localStorage.setItem(DB_NAME, JSON.stringify(state));
-  if (db) {
-    const tx = db.transaction('erp_state', 'readwrite');
-    tx.objectStore('erp_state').put({ id: 'main', data: state });
-  }
-  updateLicenseUI();
-  const url = (state.settings.fbUrl || '').trim().replace(/\/+$/, '');
-  const room = (state.settings.fbRoom || 'alkak_main').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-  if (url && url.startsWith('https://')) {
-    try {
-      await fetch(`${url}/alqaaq_erp_license/${room}.json`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active: !!isActive, updatedAt: Date.now() })
-      });
-    } catch (e) {}
-  }
-  showErpToast(isActive ? 'تم تفعيل نسخة الشركة ✓' : 'تم إيقاف نسخة الشركة عن بُعد ⛔');
 }
 
 async function checkCompanyLicense(manual) {
@@ -2751,7 +2556,7 @@ window.onload = function () {
 </div>
 <div id="erpDeviceLock" style="position:fixed;inset:0;background:linear-gradient(135deg,#1e3a5f,#17202A);color:#fff;z-index:9997;display:none;align-items:center;justify-content:center;padding:20px;text-align:center;">
   <div style="max-width:420px;width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:24px;box-shadow:0 12px 32px rgba(0,0,0,0.4);">
-    <div onclick="tapEngineerSecret()" style="font-size:38px;margin-bottom:10px;cursor:pointer;user-select:none;">🔐</div>
+    <div style="font-size:38px;margin-bottom:10px;cursor:pointer;user-select:none;">🔐</div>
     <h2 style="margin:0 0 8px;font-size:18px;color:#F9EBEA;">بانتظار تفعيل الجهاز</h2>
     <p style="font-size:12px;line-height:1.8;color:#E5E7E9;margin:0 0 12px;">
       هذا الجهاز غير مفعّل بعد لاستخدام <strong>ALKAK ERP</strong>. أرسل معرّف الجهاز إلى <strong>المهندس محمد سليم القاق</strong> لتفعيله فوراً:
@@ -2765,7 +2570,7 @@ window.onload = function () {
 </div>
 <div id="erpLicenseLock" style="position:fixed;inset:0;background:linear-gradient(135deg,#5A1228,#17202A);color:#fff;z-index:9997;display:none;align-items:center;justify-content:center;padding:20px;text-align:center;">
   <div style="max-width:420px;width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:24px;box-shadow:0 12px 32px rgba(0,0,0,0.4);">
-    <div onclick="tapEngineerSecret()" style="font-size:38px;margin-bottom:10px;cursor:pointer;user-select:none;">⛔</div>
+    <div style="font-size:38px;margin-bottom:10px;cursor:pointer;user-select:none;">⛔</div>
     <h2 style="margin:0 0 10px;font-size:18px;color:#F9EBEA;">تم إيقاف ترخيص النظام مؤقتاً</h2>
     <p style="font-size:13px;line-height:1.8;color:#E5E7E9;margin:0 0 16px;">
       يرجى مراجعة الإدارة أو التواصل مع <strong>المهندس محمد سليم القاق</strong> لتفعيل النسخة:
@@ -2774,16 +2579,6 @@ window.onload = function () {
     <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
       <a href="https://wa.me/963994782834" target="_blank" rel="noopener noreferrer" class="btn btn-success" style="text-decoration:none;">💬 تواصل عبر واتساب</a>
       <button type="button" class="btn btn-steel" onclick="checkCompanyLicense(true)">🔄 التحقق من التفعيل</button>
-    </div>
-  </div>
-</div>
-<div id="erpEngPassModal" style="position:fixed;inset:0;background:rgba(15,23,42,0.82);z-index:9998;display:none;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fff;border-radius:10px;max-width:360px;width:100%;padding:18px;border-top:5px solid var(--maroon);box-shadow:0 12px 32px rgba(0,0,0,0.35);">
-    <h3 style="margin:0 0 8px;color:var(--maroon);font-size:15px;">🔐 دخول لوحة المهندس الخاصة</h3>
-    <div class="form-group" style="margin-bottom:12px;"><label>كلمة السر</label><input type="password" id="engPassInput" class="form-control" placeholder="أدخل كلمة سر المهندس" dir="ltr"></div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;">
-      <button type="button" class="btn btn-gray" onclick="closeEngPassModal()">إلغاء</button>
-      <button type="button" class="btn btn-primary" onclick="verifyEngPass()">فتح اللوحة</button>
     </div>
   </div>
 </div>
