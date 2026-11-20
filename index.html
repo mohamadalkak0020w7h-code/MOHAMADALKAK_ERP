@@ -1017,6 +1017,7 @@ function ensureStateDefaults() {
   if (!state.settings.invTemplate) state.settings.invTemplate = 'classic';
   if (!state.settings.fbUrl) state.settings.fbUrl = 'https://alkak-erp-default-rtdb.firebaseio.com';
   if (!state.settings.engMasterFbUrl) state.settings.engMasterFbUrl = 'https://alkak-erp-default-rtdb.firebaseio.com';
+  if (state.settings.fbEnabled === undefined) state.settings.fbEnabled = true;
   if (!state.currencies.find(c => c.code === state.settings.currency)) {
     state.settings.currency = state.currencies[0].code;
   }
@@ -1146,8 +1147,11 @@ function saveAdminGmail() {
   if (!gm || !gm.includes('@')) return showErpToast('يرجى إدخال بريد Gmail صحيح');
   state.settings.adminGmail = gm;
   state.settings.fbRoom = gmailToRoom(gm);
+  state.settings.fbEnabled = true;
+  if (!state.settings.fbUrl) state.settings.fbUrl = 'https://alkak-erp-default-rtdb.firebaseio.com';
+  startCloudPolling();
   saveState();
-  showErpToast('تم ربط حساب Gmail المدير بنجاح ✓');
+  showErpToast('تم ربط حساب Gmail المدير ومزامنته مع السحابة ✓');
 }
 
 function openLoginModal(forceLock) {
