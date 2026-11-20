@@ -1060,6 +1060,9 @@ function applyPermissionsUI() {
 
 
 function openSetupWizard() {
+  document.getElementById('wizAdminGmail').value = state.settings.adminGmail || '';
+  const adm = (state.users || []).find(u => u.username === 'admin');
+  document.getElementById('wizAdminPass').value = adm ? adm.pass : '';
   document.getElementById('wizCoName').value = state.settings.coName || '';
   document.getElementById('wizCurr').value = state.settings.currency || 'USD';
   document.getElementById('wizVat').value = state.settings.vatRate !== undefined ? state.settings.vatRate : 0;
@@ -1068,7 +1071,17 @@ function openSetupWizard() {
   document.getElementById('erpSetupWizardModal').style.display = 'flex';
 }
 
+function switchWizardToLogin() {
+  document.getElementById('erpSetupWizardModal').style.display = 'none';
+  openLoginModal(false);
+}
+
 function finishSetupWizard() {
+  const gm = document.getElementById('wizAdminGmail').value.trim().toLowerCase();
+  const admPass = document.getElementById('wizAdminPass').value.trim();
+  if (!gm || !gm.includes('@')) return showErpToast('يرجى إدخال بريد Gmail صحيح للمدير');
+  if (!admPass || admPass.length < 3) return showErpToast('يرجى إدخال كلمة سر للمدير (3 أحرف على الأقل)');
+
   const coName = document.getElementById('wizCoName').value.trim();
   const curr = document.getElementById('wizCurr').value;
   const vat = parseFloat(document.getElementById('wizVat').value) || 0;
@@ -1077,6 +1090,8 @@ function finishSetupWizard() {
   const autoCodes = document.getElementById('wizAutoCodes').checked;
   const digits = parseInt(document.getElementById('wizDigits').value) || 6;
 
+  state.settings.adminGmail = gm;
+  state.settings.fbRoom = gmailToRoom(gm);
   state.settings.coName = coName;
   state.settings.currency = curr;
   state.settings.vatRate = vat;
@@ -1085,25 +1100,31 @@ function finishSetupWizard() {
   state.settings.codeDigits = digits;
   state.settings.initialized = true;
 
+  // Save admin password
+  ensureStateDefaults();
+  const adm = state.users.find(u => u.username === 'admin');
+  if (adm) adm.pass = admPass;
+  state.currentUser = 'admin';
+
   if (mode === 'empty') {
     state.coa = [];
   } else {
     state.coa = JSON.parse(JSON.stringify(ALAMEEN_COA));
     if (mode === 'alameen_ind') {
       state.coa.push(
-        { code: '320002', name: 'أجور عمال الإنتاج والتصنيع', group: 'المصاريف', nature: 'مدين', open: 0 },
-        { code: '330004', name: 'مصاريف تشغيل وصيانة الآلات', group: 'المصاريف', nature: 'مدين', open: 0 }
+        { code: '320002', name: 'أجور عمال الإنتاج والتصنيع', group: 'المصاريف', nature: 'مدين', open: 0, parent: '3' },
+        { code: '330004', name: 'مصاريف تشغيل وصيانة الآلات', group: 'المصاريف', nature: 'مدين', open: 0, parent: '3' }
       );
     } else if (mode === 'alameen_srv') {
       state.coa.push(
-        { code: '410003', name: 'إيرادات العقود والخدمات', group: 'الإيرادات', nature: 'دائن', open: 0 }
+        { code: '410003', name: 'إيرادات العقود والخدمات', group: 'الإيرادات', nature: 'دائن', open: 0, parent: '4' }
       );
     }
     state.accMap = Object.assign({}, DEFAULT_ACCMAP);
   }
   document.getElementById('erpSetupWizardModal').style.display = 'none';
   saveState();
-  showErpToast('تم تأسيس الشركة ودليل الحسابات بنجاح ✓');
+  showErpToast('تم إنشاء حساب المدير وربط Gmail وتأسيس الشركة ✓');
 }
 
 function getNextAutoCode(type) {
@@ -2547,8 +2568,18 @@ window.onload = function () {
 </div>
 <div id="erpSetupWizardModal" style="position:fixed;inset:0;background:rgba(15,23,42,0.86);z-index:9996;display:none;align-items:center;justify-content:center;padding:14px;overflow-y:auto;">
   <div style="background:#fff;border-radius:10px;max-width:480px;width:100%;padding:18px;border-top:5px solid var(--maroon);box-shadow:0 12px 32px rgba(0,0,0,0.4);">
-    <h3 style="margin:0 0 6px;color:var(--maroon);font-size:16px;">🏢 تأسيس الشركة لأول مرة — ALKAK ERP</h3>
-    <p style="margin:0 0 12px;font-size:12px;color:var(--muted);">اختر إعدادات الشركة ونظام شجرة الحسابات المناسب لعملك:</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <h3 style="margin:0;color:var(--maroon);font-size:16px;">🏢 إنشاء حساب المدير وتأسيس الشركة</h3>
+      <button type="button" class="btn btn-steel" style="padding:4px 10px;font-size:11px;" onclick="switchWizardToLogin()">📱 دخول جهاز إضافي / موظف</button>
+    </div>
+    <p style="margin:0 0 10px;font-size:11px;color:var(--muted);">اربط حساب المدير ببريد <strong>Gmail</strong> رسمي لربط بقية الهواتف والحسابات الفرعية بنفس الشركة:</p>
+
+    <div style="background:#FEF9E7;border:1px solid #D4AC0D;border-radius:6px;padding:10px;margin-bottom:10px;">
+      <div class="form-grid" style="margin-bottom:0;">
+        <div class="form-group"><label>حساب Gmail المدير (مطلوب) *</label><input type="email" id="wizAdminGmail" class="form-control" placeholder="example@gmail.com" dir="ltr"></div>
+        <div class="form-group"><label>كلمة سر المدير (مطلوب) *</label><input type="password" id="wizAdminPass" class="form-control" placeholder="اختر كلمة سر قوية" dir="ltr"></div>
+      </div>
+    </div>
 
     <div class="form-grid" style="margin-bottom:10px;">
       <div class="form-group"><label>اسم الشركة / المنشأة</label><input type="text" id="wizCoName" class="form-control" placeholder="مثال: شركة النيل التجارية"></div>
