@@ -562,9 +562,15 @@
           <div class="form-group"><label>اسم المادة</label><input type="text" id="itName" class="form-control" placeholder="اسم الصنف"></div>
           <div class="form-group"><label>النوع</label>
             <select id="itCat" class="form-control">
-              <option value="تجاري">بضاعة تجارية</option>
-              <option value="مادة أولية">مادة أولية (خام)</option>
-              <option value="منتج تام">منتج مصنّع تام</option>
+              <option value="تجاري">بضاعة تجارية (ابن)</option>
+              <option value="مادة أولية">مادة أولية / خام (ابن)</option>
+              <option value="منتج تام">منتج مصنّع تام (ابن)</option>
+              <option value="مجموعة أب">📁 مجموعة رئيسية (أب)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>المجموعة / المادة الأب</label>
+            <select id="itParent" class="form-control" onchange="onItemParentChange()">
+              <option value="">-- بدون أب (رئيسية) --</option>
             </select>
           </div>
           <div class="form-group"><label>الوحدة</label><input type="text" id="itUnit" class="form-control" value="قطعة"></div>
@@ -626,7 +632,8 @@
       <div class="panel-hdr">إضافة حساب جديد أو تعديل رصيد افتتاحي</div>
       <div class="panel-body">
         <div class="form-grid">
-          <div class="form-group"><label>رمز الحساب</label><input type="text" id="acCode" class="form-control" placeholder="1108"></div>
+          <div class="form-group"><label>الحساب الأب (اختياري)</label><select id="acParent" class="form-control" onchange="onCoaParentChange()"><option value="">-- حساب رئيسي (أب) --</option></select></div>
+          <div class="form-group"><label>رمز الحساب</label><input type="text" id="acCode" class="form-control" placeholder="123004"></div>
           <div class="form-group"><label>اسم الحساب</label><input type="text" id="acName" class="form-control" placeholder="اسم الحساب"></div>
           <div class="form-group"><label>التصنيف الرئيسي</label>
             <select id="acGroup" class="form-control">
@@ -956,35 +963,35 @@ const DEFAULT_CURRENCIES = [
 ];
 
 const ALAMEEN_COA = [
-  { code: '1', name: 'الموجودات (الأصول)', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '11', name: 'الموجودات الثابتة', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '110001', name: 'الأراضي والمباني', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '110002', name: 'الآلات والمعدات', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '110003', name: 'الأثاث والتجهيزات', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '12', name: 'الموجودات المتداولة', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '121000', name: 'الزبائن (الذمم المدينة)', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '122001', name: 'مخزون المواد الأولية والخام', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '122002', name: 'مخزون الإنتاج التام والتجاري', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '123001', name: 'الصندوق الرئيسي', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '123002', name: 'المصرف / البنك الجاري', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '123003', name: 'شيكات برسم التحصيل', group: 'الموجودات', nature: 'مدين', open: 0 },
-  { code: '2', name: 'المطاليب وحقوق الملكية', group: 'المطاليب', nature: 'دائن', open: 0 },
-  { code: '210001', name: 'رأس المال', group: 'حقوق الملكية', nature: 'دائن', open: 0 },
-  { code: '210002', name: 'الأرباح المدورة', group: 'حقوق الملكية', nature: 'دائن', open: 0 },
-  { code: '210003', name: 'جاري الشركاء', group: 'حقوق الملكية', nature: 'دائن', open: 0 },
-  { code: '220000', name: 'الموردون (الذمم الدائنة)', group: 'المطاليب', nature: 'دائن', open: 0 },
-  { code: '230001', name: 'ضريبة القيمة المضافة', group: 'المطاليب', nature: 'دائن', open: 0 },
-  { code: '3', name: 'المصاريف والتكاليف', group: 'المصاريف', nature: 'مدين', open: 0 },
-  { code: '310001', name: 'المشتريات', group: 'المصاريف', nature: 'مدين', open: 0 },
-  { code: '310002', name: 'مرتجع الشراء', group: 'المصاريف', nature: 'دائن', open: 0 },
-  { code: '320001', name: 'الرواتب والأجور', group: 'المصاريف', nature: 'مدين', open: 0 },
-  { code: '330001', name: 'الإيجارات والمصاريف الإدارية', group: 'المصاريف', nature: 'مدين', open: 0 },
-  { code: '330002', name: 'الكهرباء والماء والاتصالات', group: 'المصاريف', nature: 'مدين', open: 0 },
-  { code: '330003', name: 'مصاريف الصيانة والنقل', group: 'المصاريف', nature: 'مدين', open: 0 },
-  { code: '4', name: 'الإيرادات', group: 'الإيرادات', nature: 'دائن', open: 0 },
-  { code: '410001', name: 'المبيعات', group: 'الإيرادات', nature: 'دائن', open: 0 },
-  { code: '410002', name: 'مرتجع المبيع', group: 'الإيرادات', nature: 'مدين', open: 0 },
-  { code: '420001', name: 'إيرادات متنوعة', group: 'الإيرادات', nature: 'دائن', open: 0 }
+  { code: '1', name: 'الموجودات (الأصول)', group: 'الموجودات', nature: 'مدين', open: 0, parent: '', isParent: true },
+  { code: '11', name: 'الموجودات الثابتة', group: 'الموجودات', nature: 'مدين', open: 0, parent: '1', isParent: true },
+  { code: '110001', name: 'الأراضي والمباني', group: 'الموجودات', nature: 'مدين', open: 0, parent: '11' },
+  { code: '110002', name: 'الآلات والمعدات', group: 'الموجودات', nature: 'مدين', open: 0, parent: '11' },
+  { code: '110003', name: 'الأثاث والتجهيزات', group: 'الموجودات', nature: 'مدين', open: 0, parent: '11' },
+  { code: '12', name: 'الموجودات المتداولة', group: 'الموجودات', nature: 'مدين', open: 0, parent: '1', isParent: true },
+  { code: '121000', name: 'الزبائن (الذمم المدينة)', group: 'الموجودات', nature: 'مدين', open: 0, parent: '12' },
+  { code: '122001', name: 'مخزون المواد الأولية والخام', group: 'الموجودات', nature: 'مدين', open: 0, parent: '12' },
+  { code: '122002', name: 'مخزون الإنتاج التام والتجاري', group: 'الموجودات', nature: 'مدين', open: 0, parent: '12' },
+  { code: '123001', name: 'الصندوق الرئيسي', group: 'الموجودات', nature: 'مدين', open: 0, parent: '12' },
+  { code: '123002', name: 'المصرف / البنك الجاري', group: 'الموجودات', nature: 'مدين', open: 0, parent: '12' },
+  { code: '123003', name: 'شيكات برسم التحصيل', group: 'الموجودات', nature: 'مدين', open: 0, parent: '12' },
+  { code: '2', name: 'المطاليب وحقوق الملكية', group: 'المطاليب', nature: 'دائن', open: 0, parent: '', isParent: true },
+  { code: '210001', name: 'رأس المال', group: 'حقوق الملكية', nature: 'دائن', open: 0, parent: '2' },
+  { code: '210002', name: 'الأرباح المدورة', group: 'حقوق الملكية', nature: 'دائن', open: 0, parent: '2' },
+  { code: '210003', name: 'جاري الشركاء', group: 'حقوق الملكية', nature: 'دائن', open: 0, parent: '2' },
+  { code: '220000', name: 'الموردون (الذمم الدائنة)', group: 'المطاليب', nature: 'دائن', open: 0, parent: '2' },
+  { code: '230001', name: 'ضريبة القيمة المضافة', group: 'المطاليب', nature: 'دائن', open: 0, parent: '2' },
+  { code: '3', name: 'المصاريف والتكاليف', group: 'المصاريف', nature: 'مدين', open: 0, parent: '', isParent: true },
+  { code: '310001', name: 'المشتريات', group: 'المصاريف', nature: 'مدين', open: 0, parent: '3' },
+  { code: '310002', name: 'مرتجع الشراء', group: 'المصاريف', nature: 'دائن', open: 0, parent: '3' },
+  { code: '320001', name: 'الرواتب والأجور', group: 'المصاريف', nature: 'مدين', open: 0, parent: '3' },
+  { code: '330001', name: 'الإيجارات والمصاريف الإدارية', group: 'المصاريف', nature: 'مدين', open: 0, parent: '3' },
+  { code: '330002', name: 'الكهرباء والماء والاتصالات', group: 'المصاريف', nature: 'مدين', open: 0, parent: '3' },
+  { code: '330003', name: 'مصاريف الصيانة والنقل', group: 'المصاريف', nature: 'مدين', open: 0, parent: '3' },
+  { code: '4', name: 'الإيرادات', group: 'الإيرادات', nature: 'دائن', open: 0, parent: '', isParent: true },
+  { code: '410001', name: 'المبيعات', group: 'الإيرادات', nature: 'دائن', open: 0, parent: '4' },
+  { code: '410002', name: 'مرتجع المبيع', group: 'الإيرادات', nature: 'مدين', open: 0, parent: '4' },
+  { code: '420001', name: 'إيرادات متنوعة', group: 'الإيرادات', nature: 'دائن', open: 0, parent: '4' }
 ];
 const DEFAULT_COA = ALAMEEN_COA;
 const DEFAULT_ACCMAP = {
@@ -1534,14 +1541,27 @@ function onItemCurrChange() {
   document.getElementById('itRate').value = getCurrObj(code).rate || 1;
 }
 
+function onItemParentChange() {
+  const pCode = document.getElementById('itParent').value;
+  const codeEl = document.getElementById('itCode');
+  if (!codeEl) return;
+  if (pCode) {
+    const children = state.items.filter(i => i.parent === pCode);
+    codeEl.value = pCode + String(children.length + 1).padStart(2, '0');
+  } else if (state.settings.autoCodes !== false) {
+    codeEl.value = getNextAutoCode('item');
+  }
+}
+
 function saveItem() {
   const code = document.getElementById('itCode').value.trim();
   const name = document.getElementById('itName').value.trim();
   if (!code || !name) return showErpToast('يرجى إدخال رمز واسم المادة');
   const curr = document.getElementById('itCurr').value || state.settings.currency;
   const rate = parseFloat(document.getElementById('itRate').value) || getCurrObj(curr).rate || 1;
+  const parent = document.getElementById('itParent').value || '';
   const obj = {
-    code, name,
+    code, name, parent,
     cat: document.getElementById('itCat').value,
     unit: document.getElementById('itUnit').value.trim() || 'قطعة',
     curr, rate,
@@ -1566,6 +1586,7 @@ function editItemQuick(code) {
   document.getElementById('itCode').value = it.code;
   document.getElementById('itName').value = it.name;
   document.getElementById('itCat').value = it.cat;
+  document.getElementById('itParent').value = it.parent || '';
   document.getElementById('itUnit').value = it.unit;
   document.getElementById('itCurr').value = it.curr || state.settings.currency;
   document.getElementById('itRate').value = it.rate || getCurrObj(it.curr || state.settings.currency).rate || 1;
@@ -1746,17 +1767,42 @@ function saveMfgOrder() {
   saveState();
 }
 
+function onCoaParentChange() {
+  const pCode = document.getElementById('acParent').value;
+  const codeEl = document.getElementById('acCode');
+  if (!pCode) { codeEl.value = ''; return; }
+  const parentAcc = state.coa.find(a => a.code === pCode);
+  if (parentAcc) {
+    document.getElementById('acGroup').value = parentAcc.group;
+    document.getElementById('acNature').value = parentAcc.nature;
+  }
+  const kids = state.coa.filter(a => a.parent === pCode);
+  codeEl.value = pCode + String(kids.length + 1).padStart(4, '0');
+}
+
 function saveAccount() {
   const code = document.getElementById('acCode').value.trim();
   const name = document.getElementById('acName').value.trim();
   const group = document.getElementById('acGroup').value;
   const nature = document.getElementById('acNature').value;
   const open = parseFloat(document.getElementById('acOpen').value) || 0;
+  const parent = document.getElementById('acParent').value || '';
   if (!code || !name) return showErpToast('يرجى إدخال رمز واسم الحساب');
   const existing = state.coa.find(a => a.code === code);
-  if (existing) { existing.name = name; existing.group = group; existing.nature = nature; existing.open = open; }
-  else state.coa.push({ code, name, group, nature, open });
+  if (existing) { existing.name = name; existing.group = group; existing.nature = nature; existing.open = open; existing.parent = parent; }
+  else state.coa.push({ code, name, group, nature, open, parent });
+  document.getElementById('acCode').value = '';
+  document.getElementById('acName').value = '';
   saveState();
+  showErpToast('تم حفظ الحساب في الشجرة ✓');
+}
+
+function getCoaTreeBalance(code, journal) {
+  const kids = state.coa.filter(a => a.parent === code);
+  if (kids.length > 0) {
+    return kids.reduce((sum, k) => sum + getCoaTreeBalance(k.code, journal), 0) + getAccBalance(code, journal);
+  }
+  return getAccBalance(code, journal);
 }
 
 function deleteRec(arrName, id) {
@@ -1850,7 +1896,14 @@ function refreshAll() {
   const partyOpts = '<option value="">-- اختر الطرف --</option>' + state.parties.map(p => `<option value="${p.name}">${p.name} (${p.type})</option>`).join('');
   document.querySelectorAll('.party-select').forEach(sel => sel.innerHTML = partyOpts);
 
-  const itemOpts = '<option value="">-- اختر المادة --</option>' + state.items.map(i => `<option value="${i.code}">${i.code} - ${i.name}</option>`).join('');
+  const parentSel = document.getElementById('itParent');
+  if (parentSel) {
+    const prevP = parentSel.value;
+    parentSel.innerHTML = '<option value="">-- بدون أب (رئيسية) --</option>' +
+      state.items.filter(i => i.cat === 'مجموعة أب' || !i.parent).map(i => `<option value="${i.code}">📁 ${i.code} - ${i.name}</option>`).join('');
+    if (prevP) parentSel.value = prevP;
+  }
+  const itemOpts = '<option value="">-- اختر المادة --</option>' + state.items.filter(i => i.cat !== 'مجموعة أب').map(i => `<option value="${i.code}">${i.code} - ${i.name}</option>`).join('');
   document.querySelectorAll('.item-select').forEach(sel => sel.innerHTML = itemOpts);
 
   const accOpts = state.coa.map(a => `<option value="${a.code}">${a.code} - ${a.name}</option>`).join('');
@@ -1903,7 +1956,27 @@ function refreshAll() {
 
   let totalStockVal = 0;
   const itQ = (document.getElementById('itSearch')?.value || '').trim().toLowerCase();
-  document.getElementById('tblStock').innerHTML = state.items.filter(it => !itQ || it.name.toLowerCase().includes(itQ) || it.code.toLowerCase().includes(itQ)).map((it, idx) => {
+  const orderedItems = [];
+  const roots = state.items.filter(i => !i.parent);
+  const orphans = state.items.filter(i => i.parent && !state.items.some(p => p.code === i.parent));
+  roots.forEach(r => {
+    orderedItems.push(r);
+    state.items.filter(c => c.parent === r.code).forEach(c => orderedItems.push(c));
+  });
+  orphans.forEach(o => orderedItems.push(o));
+
+  document.getElementById('tblStock').innerHTML = orderedItems.filter(it => !itQ || it.name.toLowerCase().includes(itQ) || it.code.toLowerCase().includes(itQ)).map((it) => {
+    const idx = state.items.findIndex(x => x.code === it.code);
+    const isGroup = it.cat === 'مجموعة أب';
+    if (isGroup) {
+      const children = state.items.filter(c => c.parent === it.code);
+      const grpQty = children.reduce((a, c) => a + getStockQty(c.code), 0);
+      const grpVal = children.reduce((a, c) => a + (getStockQty(c.code) * toBaseAmount(c.cost, c.curr || baseCurr, c.rate)), 0);
+      return `<tr style="background:#EBF5FB;font-weight:bold;"><td>${it.code}</td><td style="text-align:right;">📁 ${it.name}</td><td>مجموعة أب</td><td>-</td><td>-</td><td>-</td><td>-</td>
+        <td class="num">${grpQty}</td><td><span class="badge-ok">${children.length} أصناف</span></td><td class="num">${fmt(grpVal)} ${baseCurr}</td>
+        <td><button class="btn btn-steel" style="padding:3px 7px;font-size:11px;" onclick="editItemQuick('${it.code}')">✏️</button></td>
+        <td><button class="btn btn-danger" onclick="state.items.splice(${idx},1);saveState()">✕</button></td></tr>`;
+    }
     const q = getStockQty(it.code);
     const itCurr = it.curr || baseCurr;
     const itRate = Number(it.rate) || Number(getCurrObj(itCurr).rate) || 1;
@@ -1911,7 +1984,8 @@ function refreshAll() {
     const val = q * baseCost;
     totalStockVal += val;
     const isLow = q <= (Number(it.minQty) || 0);
-    return `<tr><td>${it.code}</td><td>${it.name}</td><td>${it.cat}</td><td>${itCurr}</td><td class="num">${itRate}</td>
+    const labelName = it.parent ? ('↳ ' + it.name) : it.name;
+    return `<tr><td>${it.code}</td><td style="text-align:right;">${labelName}</td><td>${it.cat}</td><td>${itCurr}</td><td class="num">${itRate}</td>
       <td class="num">${fmt(it.cost)}</td><td class="num">${fmt(it.price)}</td>
       <td class="num">${q}</td>
       <td>${isLow ? '<span class="badge-warn">منخفض</span>' : '<span class="badge-ok">متوفر</span>'}</td>
@@ -1928,9 +2002,30 @@ function refreshAll() {
   renderJournal();
   const journal = getUnifiedJournal();
 
-  document.getElementById('tblCoa').innerHTML = state.coa.map(a => `
-    <tr><td>${a.code}</td><td style="text-align:right;font-weight:bold;">${a.name}</td><td>${a.group}</td><td>${a.nature}</td>
-    <td class="num">${fmt(a.open)}</td><td class="num">${fmt(getAccBalance(a.code, journal))}</td></tr>`).join('');
+  const acParentSel = document.getElementById('acParent');
+  if (acParentSel) {
+    const prevAcP = acParentSel.value;
+    acParentSel.innerHTML = '<option value="">-- حساب رئيسي (أب) --</option>' +
+      state.coa.map(a => `<option value="${a.code}">${a.code} - ${a.name}</option>`).join('');
+    if (prevAcP) acParentSel.value = prevAcP;
+  }
+
+  const orderedCoa = [];
+  function pushCoaNode(node, depth) {
+    orderedCoa.push({ node, depth });
+    state.coa.filter(c => c.parent === node.code).sort((x, y) => x.code.localeCompare(y.code)).forEach(c => pushCoaNode(c, depth + 1));
+  }
+  state.coa.filter(a => !a.parent || !state.coa.some(p => p.code === a.parent)).sort((x, y) => x.code.localeCompare(y.code)).forEach(r => pushCoaNode(r, 0));
+
+  document.getElementById('tblCoa').innerHTML = orderedCoa.map(({ node: a, depth }) => {
+    const hasKids = state.coa.some(c => c.parent === a.code);
+    const pad = depth * 18;
+    const prefix = hasKids ? '📁 ' : (depth > 0 ? '↳ ' : '');
+    const rowStyle = hasKids ? 'background:#EBF5FB;font-weight:bold;' : '';
+    const bal = getCoaTreeBalance(a.code, journal);
+    return `<tr style="${rowStyle}"><td>${a.code}</td><td style="text-align:right;padding-right:${8 + pad}px;">${prefix}${a.name}</td><td>${a.group}</td><td>${a.nature}</td>
+      <td class="num">${fmt(a.open)}</td><td class="num">${fmt(bal)}</td></tr>`;
+  }).join('');
 
   let totDr = 0, totCr = 0;
   const hideZero = document.getElementById('hideZeroAccountsCb')?.checked;
