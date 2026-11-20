@@ -868,7 +868,7 @@
       <div class="panel-hdr maroon">قائمة الحسابات المسجلة (الافتراضي للمدير: admin / 1234)</div>
       <div class="panel-body tbl-wrap">
         <table>
-          <thead><tr><th>اسم الدخول</th><th>الاسم الظاهر</th><th>النوع</th><th>كلمة المرور</th><th>الصلاحيات</th><th>تعديل</th><th>حذف</th></tr></thead>
+          <thead><tr><th>اسم الدخول</th><th>الاسم</th><th>الحالة</th><th>إيقاف / تفعيل</th><th>النوع</th><th>كلمة المرور</th><th>الصلاحيات</th><th>تعديل</th><th>حذف</th></tr></thead>
           <tbody id="tblUsers"></tbody>
         </table>
       </div>
@@ -1141,6 +1141,7 @@ function doLogin() {
   const pw = document.getElementById('loginPass').value.trim();
   const found = (state.users || []).find(u => u.username.toLowerCase() === un.toLowerCase() && u.pass === pw);
   if (!found) return showErpToast('اسم المستخدم أو كلمة المرور غير صحيحة');
+  if (found.active === false) return showErpToast('⛔ تم إيقاف هذا الحساب من قبل المدير');
   state.currentUser = found.username;
   saveState();
   closeLoginModal();
@@ -1158,6 +1159,18 @@ function toggleLockOnStart() {
   state.settings.lockOnStart = document.getElementById('lockOnStartCb').checked;
   saveState();
   showErpToast(state.settings.lockOnStart ? 'تم تفعيل شاشة الدخول عند بدء التطبيق ✓' : 'تم إلغاء قفل الدخول عند البدء');
+}
+
+
+function toggleUserActive(username) {
+  const u = (state.users || []).find(x => x.username === username);
+  if (!u || u.username === 'admin') return;
+  u.active = (u.active === false);
+  if (!u.active && state.currentUser === u.username) {
+    state.currentUser = 'admin';
+  }
+  saveState();
+  showErpToast(u.active ? ('تم تفعيل حساب ' + u.display + ' ✓') : ('تم إيقاف حساب ' + u.display + ' ⛔'));
 }
 
 function saveUserAccount() {
@@ -2065,14 +2078,19 @@ function refreshAll() {
   document.getElementById('lastBackupNote').textContent = state.settings.lastBackup ? ('آخر نسخة احتياطية: ' + state.settings.lastBackup) : 'تذكير: يوصى بتحميل نسخة احتياطية دورياً لحفظ بيانات السنوات الخمس.';
   const tblUsers = document.getElementById('tblUsers');
   if (tblUsers) {
-    tblUsers.innerHTML = (state.users || []).map((u, idx) => `
-      <tr><td><strong>${u.username}</strong></td><td>${u.display}</td>
+    tblUsers.innerHTML = (state.users || []).map((u, idx) => {
+      const isActive = u.active !== false;
+      const toggleBtn = u.username === 'admin' ? '-' :
+        `<button class="btn ${isActive ? 'btn-danger' : 'btn-success'}" style="padding:3px 8px;font-size:11px;" onclick="toggleUserActive('${u.username}')">${isActive ? '⛔ إيقاف' : '✅ تفعيل'}</button>`;
+      return `<tr><td><strong>${u.username}</strong></td><td>${u.display}</td>
+      <td>${isActive ? '<span class="badge-ok">نشط</span>' : '<span class="badge-warn">موقوف</span>'}</td>
+      <td>${toggleBtn}</td>
       <td>${u.role === 'admin' ? '<span class="badge-ok">مدير</span>' : 'حساب فرعي'}</td>
       <td class="num">${u.pass}</td>
       <td style="font-size:11px;">${u.role === 'admin' ? 'كامل الصلاحيات' : (u.perms || []).join('، ')}</td>
       <td><button class="btn btn-steel" style="padding:3px 7px;font-size:11px;" onclick="editUserQuick('${u.username}')">✏️</button></td>
-      <td>${u.username === 'admin' ? '-' : `<button class="btn btn-danger" onclick="state.users.splice(${idx},1);saveState()">✕</button>`}</td></tr>
-    `).join('');
+      <td>${u.username === 'admin' ? '-' : `<button class="btn btn-danger" onclick="state.users.splice(${idx},1);saveState()">✕</button>`}</td></tr>`;
+    }).join('');
   }
   applyPermissionsUI();
 
