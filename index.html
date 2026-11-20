@@ -864,6 +864,14 @@
       </div>
     </div>
 
+    <div id="adminAlertsPanel" class="panel" style="display:none;border:2px solid #D4AC0D;">
+      <div class="panel-hdr" style="background:#D4AC0D;color:#17202A;">
+        <span>🔔 تنبيهات المدير الرئيسي (الحسابات المضافة من الأجهزة)</span>
+        <button type="button" class="btn btn-gray" style="padding:2px 8px;font-size:11px;" onclick="clearAdminAlerts()">مسح التنبيهات</button>
+      </div>
+      <div class="panel-body" id="adminAlertsBox" style="font-size:12px;line-height:1.7;"></div>
+    </div>
+
     <div class="panel">
       <div class="panel-hdr maroon">قائمة الحسابات المسجلة (الافتراضي للمدير: admin / 1234)</div>
       <div class="panel-body tbl-wrap">
@@ -917,6 +925,29 @@
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button type="button" class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="setCompanyLicense(false)">⛔ إيقاف نسخة الشركة</button>
                 <button type="button" class="btn btn-success" onclick="setCompanyLicense(true)">✅ تفعيل نسخة الشركة</button>
+              </div>
+            </div>
+            <div style="background:#EBF5FB;border:1px solid #85C1E9;border-radius:6px;padding:10px;margin-bottom:10px;">
+              <div style="font-weight:bold;font-size:12px;color:var(--steel);margin-bottom:6px;">
+                📱 نظام تفعيل الأجهزة (منع النسخ غير المصرح) — معرّف هذا الجهاز: <span id="engMyDevId" dir="ltr"></span>
+              </div>
+              <div class="form-grid" style="margin-bottom:6px;">
+                <div class="form-group">
+                  <label>رابط سحابة المهندس المركزية (Firebase)</label>
+                  <input type="url" id="engMasterFbUrl" class="form-control" placeholder="https://your-project-default-rtdb.firebaseio.com" dir="ltr">
+                </div>
+                <div class="form-group" style="display:flex;align-items:flex-end;">
+                  <label style="font-size:12px;font-weight:bold;cursor:pointer;margin-bottom:6px;">
+                    <input type="checkbox" id="engDevLockCb" onchange="saveEngDeviceSettings()"> تفعيل قفل الأجهزة الجديدة
+                  </label>
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+                <button type="button" class="btn btn-primary" onclick="saveEngDeviceSettings();approveThisDevice()">✅ تفعيل هذا الجهاز وحفظ الإعدادات</button>
+                <button type="button" class="btn btn-steel" onclick="loadRegisteredDevices()">🔄 تحديث قائمة الأجهزة</button>
+              </div>
+              <div id="engDevicesList" style="max-height:150px;overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:4px;padding:6px;font-size:11px;">
+                اضغط «تحديث قائمة الأجهزة» لعرض الأجهزة المسجلة.
               </div>
             </div>
             <div id="errorLogBox" style="background:#F8F9F9;border:1px solid var(--border);border-radius:5px;padding:8px;font-size:11px;max-height:140px;overflow-y:auto;direction:ltr;text-align:left;">
@@ -1019,6 +1050,7 @@ const DEFAULT_USERS = [
 function ensureStateDefaults() {
   if (!state.currencies || !state.currencies.length) state.currencies = JSON.parse(JSON.stringify(DEFAULT_CURRENCIES));
   if (!state.fiscalArchive) state.fiscalArchive = [];
+  if (!state.adminAlerts) state.adminAlerts = [];
   if (!state.manualJournals) state.manualJournals = [];
   if (!state.accMap) state.accMap = Object.assign({}, DEFAULT_ACCMAP);
   if (state.settings.autoCodes === undefined) state.settings.autoCodes = true;
@@ -1162,6 +1194,12 @@ function toggleLockOnStart() {
 }
 
 
+
+function clearAdminAlerts() {
+  state.adminAlerts = [];
+  saveState();
+}
+
 function toggleUserActive(username) {
   const u = (state.users || []).find(x => x.username === username);
   if (!u || u.username === 'admin') return;
@@ -1183,13 +1221,24 @@ function saveUserAccount() {
   const perms = role === 'admin' ? ['all'] : Array.from(document.querySelectorAll('.u-perm-cb:checked')).map(c => c.value);
   const idx = state.users.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
   const obj = { username, display, pass, role, perms };
+  const isNew = idx < 0;
   if (idx >= 0) state.users[idx] = obj;
   else state.users.push(obj);
+  if (!state.adminAlerts) state.adminAlerts = [];
+  state.adminAlerts.unshift({
+    id: Date.now(),
+    time: new Date().toLocaleString('ar-EG'),
+    by: state.currentUser || 'admin',
+    target: username + ' (' + display + ')',
+    role: role === 'admin' ? 'مدير' : 'فرعي',
+    action: isNew ? 'إضافة حساب جديد' : 'تعديل حساب'
+  });
+  if (state.adminAlerts.length > 30) state.adminAlerts.pop();
   document.getElementById('uUsername').value = '';
   document.getElementById('uDisplay').value = '';
   document.getElementById('uPass').value = '';
   saveState();
-  showErpToast('تم حفظ الحساب بنجاح ✓');
+  showErpToast('تم حفظ الحساب وإرسال إشعار للمدير الرئيسي ✓');
 }
 
 function editUserQuick(username) {
@@ -1220,6 +1269,7 @@ function initDB() {
     refreshAll();
     startCloudPolling();
     updateLicenseUI();
+    checkDeviceActivation(false);
     if (state.settings.fbEnabled && getCloudEndpoint()) { pullFromCloud(false); checkCompanyLicense(false); }
     if (!state.settings.initialized && !state.settings.coName && state.invoices.length === 0) openSetupWizard();
     if (state.settings.lockOnStart) openLoginModal(true);
@@ -1299,7 +1349,12 @@ async function pullFromCloud(manual) {
       }
       refreshAll();
       updateCloudBadge('☁️ متزامن ✓', true);
-      if (manual) showErpToast('تم جلب أحدث بيانات السحابة ✓');
+      const latestAlert = (state.adminAlerts || [])[0];
+      if (latestAlert && (Date.now() - latestAlert.id) < 60000 && getCurrentUserObj().role === 'admin') {
+        showErpToast('🔔 تنبيه للمدير: ' + latestAlert.action + ' ' + latestAlert.target);
+      } else if (manual) {
+        showErpToast('تم جلب أحدث بيانات السحابة ✓');
+      }
     }
   } catch (e) {
     updateCloudBadge('☁️ تعذر الاتصال', false);
@@ -2076,6 +2131,18 @@ function refreshAll() {
     </div>`;
 
   document.getElementById('lastBackupNote').textContent = state.settings.lastBackup ? ('آخر نسخة احتياطية: ' + state.settings.lastBackup) : 'تذكير: يوصى بتحميل نسخة احتياطية دورياً لحفظ بيانات السنوات الخمس.';
+  const alertsPanel = document.getElementById('adminAlertsPanel');
+  const alertsBox = document.getElementById('adminAlertsBox');
+  if (alertsPanel && alertsBox) {
+    const isMainAdmin = getCurrentUserObj().username === 'admin' || getCurrentUserObj().role === 'admin';
+    const alerts = state.adminAlerts || [];
+    if (isMainAdmin && alerts.length) {
+      alertsPanel.style.display = 'block';
+      alertsBox.innerHTML = alerts.map(a => `<div style="padding:4px 0;border-bottom:1px solid #eee;">🔔 <strong>${a.action}:</strong> ${a.target} — الصفة: <strong>${a.role}</strong> (بواسطة: ${a.by} في ${a.time})</div>`).join('');
+    } else {
+      alertsPanel.style.display = 'none';
+    }
+  }
   const tblUsers = document.getElementById('tblUsers');
   if (tblUsers) {
     tblUsers.innerHTML = (state.users || []).map((u, idx) => {
@@ -2375,6 +2442,12 @@ function verifyEngPass() {
     p.style.display = 'block';
     refreshErrorLogView();
     updateLicenseUI();
+    document.getElementById('engMyDevId').textContent = getOrCreateDeviceId();
+    document.getElementById('engMasterFbUrl').value = state.settings.engMasterFbUrl || '';
+    document.getElementById('engDevLockCb').checked = !!state.settings.deviceLockEnabled;
+    document.getElementById('erpDeviceLock').style.display = 'none';
+    navTo('about');
+    loadRegisteredDevices();
     showErpToast('تم فتح لوحة المهندس الخاصة ✓');
   }
 }
@@ -2409,6 +2482,140 @@ try {
   if (savedErrs) erpErrorLogs = JSON.parse(savedErrs);
 } catch (e) {}
 
+
+
+function getOrCreateDeviceId() {
+  let id = '';
+  try { id = localStorage.getItem('ALKAK_Device_ID') || ''; } catch (e) {}
+  if (!id) {
+    id = 'DEV-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+    try { localStorage.setItem('ALKAK_Device_ID', id); } catch (e) {}
+  }
+  return id;
+}
+
+function getMasterFbUrl() {
+  return (state.settings.engMasterFbUrl || state.settings.fbUrl || '').trim().replace(/\/+$/, '');
+}
+
+function saveEngDeviceSettings() {
+  state.settings.engMasterFbUrl = document.getElementById('engMasterFbUrl').value.trim();
+  state.settings.deviceLockEnabled = document.getElementById('engDevLockCb').checked;
+  localStorage.setItem(DB_NAME, JSON.stringify(state));
+  if (db) {
+    const tx = db.transaction('erp_state', 'readwrite');
+    tx.objectStore('erp_state').put({ id: 'main', data: state });
+  }
+  showErpToast('تم حفظ إعدادات تفعيل الأجهزة ✓');
+}
+
+async function approveThisDevice() {
+  const devId = getOrCreateDeviceId();
+  try { localStorage.setItem('ALKAK_Device_Status', 'approved'); } catch (e) {}
+  document.getElementById('erpDeviceLock').style.display = 'none';
+  await setRemoteDeviceStatus(devId, 'approved');
+}
+
+async function setRemoteDeviceStatus(devId, status) {
+  const url = getMasterFbUrl();
+  if (url && url.startsWith('https://')) {
+    try {
+      await fetch(`${url}/alkak_devices/${devId}.json`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: devId, status, updatedAt: Date.now() })
+      });
+    } catch (e) {}
+  }
+  if (devId === getOrCreateDeviceId()) {
+    try { localStorage.setItem('ALKAK_Device_Status', status); } catch (e) {}
+    updateDeviceLockUI(status);
+  }
+  loadRegisteredDevices();
+  showErpToast(status === 'approved' ? 'تم تفعيل الجهاز ✓' : 'تم إيقاف الجهاز ⛔');
+}
+
+function updateDeviceLockUI(status) {
+  const lock = document.getElementById('erpDeviceLock');
+  if (!lock) return;
+  if (!state.settings.deviceLockEnabled) {
+    lock.style.display = 'none';
+    return;
+  }
+  lock.style.display = (status === 'approved') ? 'none' : 'flex';
+}
+
+async function checkDeviceActivation(manual) {
+  const devId = getOrCreateDeviceId();
+  const devEl1 = document.getElementById('engMyDevId');
+  const devEl2 = document.getElementById('lockMyDevId');
+  if (devEl1) devEl1.textContent = devId;
+  if (devEl2) devEl2.textContent = devId;
+
+  let localStatus = 'pending';
+  try { localStatus = localStorage.getItem('ALKAK_Device_Status') || 'pending'; } catch (e) {}
+
+  const url = getMasterFbUrl();
+  if (url && url.startsWith('https://')) {
+    try {
+      const res = await fetch(`${url}/alkak_devices/${devId}.json`);
+      const data = res.ok ? await res.json() : null;
+      if (data && data.status) {
+        localStatus = data.status;
+        try { localStorage.setItem('ALKAK_Device_Status', localStatus); } catch (e) {}
+      } else {
+        // Register new device automatically as pending
+        await fetch(`${url}/alkak_devices/${devId}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceId: devId,
+            company: state.settings.coName || 'شركة جديدة',
+            status: localStatus,
+            firstSeen: new Date().toISOString()
+          })
+        });
+      }
+    } catch (e) {}
+  }
+  updateDeviceLockUI(localStatus);
+  if (manual) showErpToast(localStatus === 'approved' ? 'تم تفعيل الجهاز ✓' : 'الجهاز ما زال بانتظار موافقة المهندس');
+}
+
+async function loadRegisteredDevices() {
+  const box = document.getElementById('engDevicesList');
+  if (!box) return;
+  const url = getMasterFbUrl();
+  if (!url || !url.startsWith('https://')) {
+    box.textContent = 'أدخل رابط سحابة المهندس (Firebase) أولاً لعرض كل الأجهزة.';
+    return;
+  }
+  try {
+    const res = await fetch(`${url}/alkak_devices.json`);
+    const data = await res.json();
+    if (!data) { box.textContent = 'لا توجد أجهزة مسجلة بعد.'; return; }
+    const rows = Object.values(data).map(d => {
+      const st = d.status === 'approved' ? '✅ مفعّل' : (d.status === 'blocked' ? '⛔ موقوف' : '⏳ بانتظار التفعيل');
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #eee;gap:6px;">
+        <span><strong>${d.deviceId}</strong> (${d.company || '-'}) — ${st}</span>
+        <span style="display:flex;gap:4px;">
+          <button type="button" class="btn btn-success" style="padding:2px 6px;font-size:10px;" onclick="setRemoteDeviceStatus('${d.deviceId}','approved')">تفعيل</button>
+          <button type="button" class="btn btn-danger" style="padding:2px 6px;font-size:10px;" onclick="setRemoteDeviceStatus('${d.deviceId}','blocked')">إيقاف</button>
+        </span>
+      </div>`;
+    }).join('');
+    box.innerHTML = rows || 'لا توجد أجهزة.';
+  } catch (e) {
+    box.textContent = 'تعذر جلب قائمة الأجهزة من السحابة.';
+  }
+}
+
+function requestDeviceWhatsApp() {
+  const devId = getOrCreateDeviceId();
+  const co = state.settings.coName || 'شركة جديدة';
+  const msg = `مرحباً مهندس محمد، أرجو تفعيل جهاز ALKAK ERP:%0Aالشركة: ${encodeURIComponent(co)}%0Aمعرف الجهاز: ${devId}`;
+  window.open('https://wa.me/963994782834?text=' + msg, '_blank');
+}
 
 function updateLicenseUI() {
   const active = state.settings.licenseActive !== false;
@@ -2539,6 +2746,20 @@ window.onload = function () {
 
     <div style="display:flex;justify-content:flex-end;gap:8px;">
       <button type="button" class="btn btn-primary" onclick="finishSetupWizard()">🚀 اعتماد وبدء العمل</button>
+    </div>
+  </div>
+</div>
+<div id="erpDeviceLock" style="position:fixed;inset:0;background:linear-gradient(135deg,#1e3a5f,#17202A);color:#fff;z-index:9997;display:none;align-items:center;justify-content:center;padding:20px;text-align:center;">
+  <div style="max-width:420px;width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:24px;box-shadow:0 12px 32px rgba(0,0,0,0.4);">
+    <div onclick="tapEngineerSecret()" style="font-size:38px;margin-bottom:10px;cursor:pointer;user-select:none;">🔐</div>
+    <h2 style="margin:0 0 8px;font-size:18px;color:#F9EBEA;">بانتظار تفعيل الجهاز</h2>
+    <p style="font-size:12px;line-height:1.8;color:#E5E7E9;margin:0 0 12px;">
+      هذا الجهاز غير مفعّل بعد لاستخدام <strong>ALKAK ERP</strong>. أرسل معرّف الجهاز إلى <strong>المهندس محمد سليم القاق</strong> لتفعيله فوراً:
+    </p>
+    <div id="lockMyDevId" style="background:rgba(0,0,0,0.35);padding:8px 12px;border-radius:8px;font-family:monospace;font-size:15px;font-weight:bold;color:#D4AC0D;margin-bottom:14px;direction:ltr;">DEV-0000</div>
+    <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
+      <button type="button" class="btn btn-success" onclick="requestDeviceWhatsApp()">📲 طلب التفعيل (واتساب)</button>
+      <button type="button" class="btn btn-steel" onclick="checkDeviceActivation(true)">🔄 التحقق من التفعيل</button>
     </div>
   </div>
 </div>
