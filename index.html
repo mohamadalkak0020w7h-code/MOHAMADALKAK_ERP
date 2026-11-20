@@ -988,7 +988,7 @@ const DEFAULT_ACCMAP = {
   salaries: '320001', adminExp: '330001'
 };
 let state = {
-  settings: { coName: '', taxNo: '', address: '', vatRate: 15, currency: 'USD', year: '2026', invTemplate: 'classic', lastBackup: '' },
+  settings: { coName: '', taxNo: '', address: '', vatRate: 15, currency: 'USD', year: '2026', invTemplate: 'classic', lastBackup: '', fbUrl: 'https://alkak-erp-default-rtdb.firebaseio.com', engMasterFbUrl: 'https://alkak-erp-default-rtdb.firebaseio.com', fbEnabled: true },
   currencies: JSON.parse(JSON.stringify(DEFAULT_CURRENCIES)),
   coa: JSON.parse(JSON.stringify(DEFAULT_COA)),
   parties: [],
@@ -1015,6 +1015,8 @@ function ensureStateDefaults() {
   if (!state.currentUser) state.currentUser = 'admin';
   if (state.settings.lockOnStart === undefined) state.settings.lockOnStart = false;
   if (!state.settings.invTemplate) state.settings.invTemplate = 'classic';
+  if (!state.settings.fbUrl) state.settings.fbUrl = 'https://alkak-erp-default-rtdb.firebaseio.com';
+  if (!state.settings.engMasterFbUrl) state.settings.engMasterFbUrl = 'https://alkak-erp-default-rtdb.firebaseio.com';
   if (!state.currencies.find(c => c.code === state.settings.currency)) {
     state.settings.currency = state.currencies[0].code;
   }
